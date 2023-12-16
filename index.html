@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      background-color: rgb(180, 238, 238);
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    h1 {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #canvas-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100vh;
+    }
+
+    #image-sticker-container {
+      display: flex;
+    }
+
+    #image-column, #sticker-column {
+      padding: 10px;
+      border: 3px solid #4e188b;
+    }
+
+    #image-column img, #sticker-column img {
+      width: 50px;
+      height: 50px;
+      cursor: pointer;
+      margin: 5px;
+    }
+
+    #canvas {
+      border: 5px solid #000000;
+      margin-top: 10px;
+    }
+
+    #save-button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+  </style>
+  <title>Editor de Imágenes</title>
+</head>
+<body>
+  <h1>Editor de Imágenes</h1>
+  <div id="canvas-container">
+    <div id="image-sticker-container">
+      <div id="image-column">
+        <h2> 1) Selecciona una imagen</h2>
+        <!-- Agrega tus imágenes aquí -->
+        <img src="imagen/1.jpg" onclick="selectImage(this)">
+        <img src="imagen/2.jpg" onclick="selectImage(this)">
+        <img src="imagen/3.jpg" onclick="selectImage(this)">
+        <img src="imagen/4.jpg" onclick="selectImage(this)">
+      </div>
+      <div id="sticker-column">
+        <h2> 2) Añadir Stickers</h2>
+        <!-- Agrega tus stickers aquí -->
+        <img src="sticker/1.png" onclick="addSticker(this)">
+        <img src="sticker/2.png" onclick="addSticker(this)">
+        <img src="sticker/4.png" onclick="addSticker(this)">
+        <img src="sticker/5.png" onclick="addSticker(this)">
+        <img src="sticker/6.png" onclick="addSticker(this)">
+        <img src="sticker/7.png" onclick="addSticker(this)">
+        <img src="sticker/8.png" onclick="addSticker(this)">
+        <img src="sticker/9.png" onclick="addSticker(this)">
+        <img src="sticker/10.png" onclick="addSticker(this)">
+        <img src="sticker/11.png" onclick="addSticker(this)">
+        <img src="sticker/12.png" onclick="addSticker(this)">
+      </div>
+    </div>
+    <canvas id="canvas" width="800" height="600"></canvas>
+    <button id="save-button" onclick="saveImage()">Guardar Imagen</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let selectedImage = null;
+    let stickers = [];
+
+    function selectImage(image) {
+      selectedImage = image;
+      drawCanvas();
+    }
+
+    function addSticker(sticker) {
+      const scaleFactor = 10; // Ajusta el factor de escala según tus necesidades
+      stickers.push({ image: sticker, x: 100, y: 100, width: 50 * scaleFactor, height: 50 * scaleFactor });
+      drawCanvas();
+    }
+
+    function drawCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Dibujar la imagen seleccionada
+      if (selectedImage) {
+        ctx.drawImage(selectedImage, 0, 0, canvas.width, canvas.height);
+      }
+
+      // Dibujar los stickers
+      stickers.forEach(sticker => {
+        ctx.drawImage(sticker.image, sticker.x, sticker.y, sticker.width, sticker.height);
+      });
+    }
+
+    function saveImage() {
+      // Implementa la lógica para guardar la imagen
+      const dataURL = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = dataURL;
+      link.download = 'imagen_editada.png';
+      link.click();
+    }
+
+    // Manejo de eventos para el movimiento y cambio de tamaño de stickers
+    let isDragging = false;
+    let selectedSticker = null;
+
+    function getMousePos(event) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top
+      };
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+      const mousePos = getMousePos(e);
+
+      stickers.forEach(sticker => {
+        if (
+          mousePos.x >= sticker.x &&
+          mousePos.x <= sticker.x + sticker.width &&
+          mousePos.y >= sticker.y &&
+          mousePos.y <= sticker.y + sticker.height
+        ) {
+          isDragging = true;
+          selectedSticker = sticker;
+        }
+      });
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (isDragging && selectedSticker) {
+        const mousePos = getMousePos(e);
+
+        selectedSticker.x = mousePos.x - selectedSticker.width / 2;
+        selectedSticker.y = mousePos.y - selectedSticker.height / 2;
+
+        drawCanvas();
+      }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      isDragging = false;
+      selectedSticker = null;
+    });
+
+    // Manejo de eventos táctiles para dispositivos móviles
+    canvas.addEventListener('touchstart', (e) => {
+      const touch = e.touches[0];
+      const touchPos = getTouchPos(touch);
+
+      stickers.forEach(sticker => {
+        if (
+          touchPos.x >= sticker.x &&
+          touchPos.x <= sticker.x + sticker.width &&
+          touchPos.y >= sticker.y &&
+          touchPos.y <= sticker.y + sticker.height
+        ) {
+          isDragging = true;
+          selectedSticker = sticker;
+        }
+      });
+    });
+
+    canvas.addEventListener('touchmove', (e) => {
+      if (isDragging && selectedSticker) {
+        const touch = e.touches[0];
+        const touchPos = getTouchPos(touch);
+
+        selectedSticker.x = touchPos.x - selectedSticker.width / 2;
+        selectedSticker.y = touchPos.y - selectedSticker.height / 2;
+
+        drawCanvas();
+      }
+    });
+
+    canvas.addEventListener('touchend', () => {
+      isDragging = false;
+      selectedSticker = null;
+    });
+
+    function getTouchPos(touch) {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: touch.clientX - rect.left,
+        y: touch.clientY - rect.top
+      };
+    }
+  </script>
+</body>
+</html>
